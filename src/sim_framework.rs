@@ -76,7 +76,19 @@ impl Sim {
   
 
   pub fn update_time_avg_stats(&mut self){
-    println!("Not complete TODO");
+   /* Update area accumulators for time-average statistics. */
+
+    let time_since_last_event:f64;
+
+    /* Compute time since last event, and update last-event-time marker. */
+   time_since_last_event = self.sim_time - self.time_last_event;
+   self.time_last_event = self.sim_time;
+
+   /* Update area under number-in-queue function. */
+   self.area_num_in_q += self.num_in_q as f64 * time_since_last_event;
+
+   /* Update area under server-busy indicator function. */
+   self.area_server_status += self.server_status.float64() * time_since_last_event;
 
   }
 
@@ -118,6 +130,16 @@ pub enum Status {
     IDLE,
     BUSY
 }
+impl Status {
+   fn float64(&mut self) ->f64{
+      match self {
+         Self::IDLE => 0.0,
+         Self::BUSY => 1.0
+      }
+   }
+
+}
+
 
 #[derive(Debug)]
 #[derive(PartialEq)]
@@ -134,11 +156,11 @@ mod tests {
 
    #[test]
    #[should_panic]
-   fn sim_timing() {
+   fn test_sim_timing() {
       let mean_interarrival: f64= 2.33;
       let q_limit:i64 = 200;
-   
       let mut test_sim = Sim::initialize(mean_interarrival, q_limit);
+
       assert_eq!(test_sim.timing(), NextEventType::ARRIVE);
       
       test_sim.time_next_event[1] = 0.0033;
@@ -151,6 +173,12 @@ mod tests {
 }
 
 #[test]
+fn test_update_time_avg_stats(){
+   //TODO
+   assert_eq!(1,1);
+}
+
+#[test]
 fn test_exp_draw(){
    let mut draw:Vec<f64> = Vec::new();
    let large_number = 990_000;
@@ -160,6 +188,7 @@ fn test_exp_draw(){
    let truth_mean:f64 = 100.0 * 1.0 / 2.33;
    assert_eq!(draw_mean.round(), truth_mean.round())
 }
+
 
 
 }
