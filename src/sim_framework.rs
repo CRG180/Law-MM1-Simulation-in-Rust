@@ -1,33 +1,38 @@
 use rand_distr::{Exp, Distribution};
-use rand;
+use rand::{self};
+use std::process;
+
 
 #[derive(Debug)]
 pub struct Sim {
    pub mean_interarrival:f64,
+   pub mean_service:f64,
    pub sim_time:f64,
    pub server_status:Status,
-   pub q_limit: i64,
-   pub  num_events: usize,
-   pub  num_in_q: i64,
+   pub q_limit: usize,
+   pub num_events: usize,
+   pub num_in_q: usize,
    pub time_last_event: f64,
    pub num_cust_delayed: i32,
    pub total_of_delays: f64,
    pub area_num_in_q: f64,
    pub area_server_status: f64,
    pub time_next_event: Vec<f64>,
+   pub time_arrival: Vec<f64>,
     
 }
 
 impl Sim {
 
-   pub fn initialize(mean_interarrival:f64, q_limit:i64)->Sim{
+   pub fn initialize(mean_interarrival:f64,mean_service:f64, q_limit:usize)->Sim{
 
 
        let mut init = Sim {
-            mean_interarrival: mean_interarrival,
+            mean_interarrival,
+            mean_service,
             sim_time:0.0,
             server_status: Status::IDLE,
-            q_limit: q_limit,
+            q_limit,
             num_events: 2,
             num_in_q:0,
             time_last_event:0.0,
@@ -35,7 +40,8 @@ impl Sim {
             total_of_delays:0.0,
             area_num_in_q:0.0,
             area_server_status:0.0,
-            time_next_event:Vec::with_capacity(3)
+            time_next_event:Vec::with_capacity(3),
+            time_arrival:Vec::with_capacity(q_limit + 1)
 
         };
         /* Initialize event list. Since no customers are present,
@@ -60,7 +66,7 @@ impl Sim {
             min_time_next_event =  self.time_next_event[i];
             if i  == 0 {next_event_type = NextEventType::ARRIVE;}
             else if i  == 1 {next_event_type = NextEventType::DEPART;}
-            else {println!("Unexpeted Behavior in sim.timing() {:?} index {}", next_event_type, i );}
+            else {panic!("Unexpeted Behavior in sim.timing() {:?} index {}", next_event_type, i );}
          }
       }
       
@@ -68,7 +74,7 @@ impl Sim {
          /* The event list is empty, so stop the simulation. */
          println!("Simulation is complete, \
          the event list is empty at {}" , self.sim_time);
-         panic!("Simulation Complete")
+         process::exit(1);
       }
       next_event_type
       }
@@ -93,7 +99,7 @@ impl Sim {
   }
 
   pub fn arrive(&mut self){
-      let mut delay:f64;
+      let delay:f64;
    /* Schedule next arrival. */
       self.time_next_event[0] = self.sim_time + draw_exp(self.mean_interarrival);
    /* Check to see whether server is busy. */
@@ -107,8 +113,26 @@ impl Sim {
 
       /* The queue has overflowed, so stop the simulation. */
       println!("Overflow of the of the array time_arrival at {}",self.sim_time);
-     // process::exit(2);
+      process::exit(2);
+      
     }
+    /* There is still room in the queue, so store the time of arrival of the 
+    arriving customer at the (new) end of time_arrival. */
+
+   self.time_arrival[self.num_in_q] = self.sim_time;
+   }
+   else {
+   /* Server is idle, so arriving customer has a delay of zero.
+   (The following two statements are for program clarity and do not 
+      affect the results of the simulation.) */
+      delay = 0.0;
+      self.total_of_delays+= delay;
+      /* Increment the number of customers delayed, and make server busy. */
+      self.num_cust_delayed +=1;
+      self.server_status=Status::BUSY;
+      /* Schedule a departure (service completion). */
+      self.time_next_event[1] = self.sim_time + draw_exp(self.mean_service)
+
    }
   }
 
@@ -118,8 +142,8 @@ impl Sim {
     
 }
 
-pub fn draw_exp(mean_interarrival:f64) ->f64{
-let exp = Exp::new(mean_interarrival).unwrap();
+pub fn draw_exp(lamda_time:f64) ->f64{
+let exp = Exp::new(lamda_time).unwrap();
 let random_exp:f64 = exp.sample(&mut rand::thread_rng());
 random_exp
 }
@@ -137,9 +161,7 @@ impl Status {
          Self::BUSY => 1.0
       }
    }
-
 }
-
 
 #[derive(Debug)]
 #[derive(PartialEq)]
@@ -155,21 +177,33 @@ mod tests {
    use super::*;
 
    #[test]
-   #[should_panic]
+
    fn test_sim_timing() {
       let mean_interarrival: f64= 2.33;
-      let q_limit:i64 = 200;
-      let mut test_sim = Sim::initialize(mean_interarrival, q_limit);
+      let mean_service: f64 = 1.33;
+      let q_limit:usize = 200;
+      let mut test_sim = Sim::initialize(mean_interarrival,mean_service,q_limit);
 
       assert_eq!(test_sim.timing(), NextEventType::ARRIVE);
       
       test_sim.time_next_event[1] = 0.0033;
       assert_eq!(test_sim.timing(), NextEventType::DEPART);
-
-      test_sim.time_next_event[0] = 1.0e+30;
-      test_sim.time_next_event[1] = 1.0e+30;
-      assert_eq!(test_sim.timing(), NextEventType::ENDPROGRAM);
+      // This test will not work as expected due to exit code.
+      // test_sim.time_next_event[0] = 1.0e+30;
+      // test_sim.time_next_event[1] = 1.0e+30;
+      // assert_eq!(test_sim.timing(), NextEventType::ENDPROGRAM);
  
+}
+#[test]
+fn test_arrive() {
+   let mean_interarrival: f64= 2.33;
+   let mean_service: f64 = 1.33;
+   let q_limit:usize = 200;
+   let mut test_sim = Sim::initialize(mean_interarrival,mean_service,q_limit);
+   test_sim.timing();
+   test_sim.arrive();
+
+   assert_eq!(test_sim.server_status, Status::BUSY);    
 }
 
 #[test]
