@@ -11,9 +11,9 @@ fn main() {
 
 
 /* Read input parameters. */
-   let mean_interarrival: f64= 2.33;
-   let mean_service:f64 = 1.22;
-   let num_delays_required:i32 = 3;
+   let mean_interarrival: f64= 1.00;
+   let mean_service:f64 = 0.500;
+   let num_delays_required:i32 = 1000;
    let q_limit:usize = 200;
 
 
@@ -29,11 +29,11 @@ fn main() {
    /* Run the simulation while more delays are still needed. */
 
     while simulation.num_cust_delayed < num_delays_required { 
-
+      
       /* Determine the next event. */
      let next_event_type: NextEventType = simulation.timing();
       
-        simulation.update_time_avg_stats();
+      simulation.update_time_avg_stats();
 
       match next_event_type {
 
@@ -51,5 +51,7 @@ fn main() {
       }
 
     }
+    /* Invoke the report generator and end the simulation. */
+    simulation.report();
 
 }

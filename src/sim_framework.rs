@@ -41,7 +41,7 @@ impl Sim {
             area_num_in_q:0.0,
             area_server_status:0.0,
             time_next_event:Vec::with_capacity(3),
-            time_arrival:Vec::with_capacity(q_limit + 1)
+            time_arrival:vec![0.0;q_limit + 1]
 
         };
         /* Initialize event list. Since no customers are present,
@@ -76,6 +76,8 @@ impl Sim {
          the event list is empty at {}" , self.sim_time);
          process::exit(1);
       }
+      /* The event list is not empty, so advance the simulation clock. */
+      self.sim_time =min_time_next_event;
       next_event_type
       }
       
@@ -107,19 +109,19 @@ impl Sim {
   
       /* Server is busy, so increment number of customers in queue. */
       self.num_in_q +=1;
+      println!("number in the que {} at {} min", self.num_in_q, self.sim_time);
 
       /* Check to see whether an overflow condition exists. */
       if self.num_in_q > self.q_limit {
 
       /* The queue has overflowed, so stop the simulation. */
       println!("Overflow of the of the array time_arrival at {}",self.sim_time);
-      process::exit(2);
-      
-    }
-    /* There is still room in the queue, so store the time of arrival of the 
-    arriving customer at the (new) end of time_arrival. */
+      process::exit(2);  
+      }
+      /* There is still room in the queue, so store the time of arrival of the 
+      arriving customer at the (new) end of time_arrival. */
 
-   self.time_arrival[self.num_in_q] = self.sim_time;
+      self.time_arrival[self.num_in_q] = self.sim_time;
    }
    else {
    /* Server is idle, so arriving customer has a delay of zero.
@@ -137,7 +139,47 @@ impl Sim {
   }
 
  pub fn depart(&mut self){
+   let delay:f64;
+   /* Check to see whether the queue is empty. */
+   if self.num_in_q == 0 {
 
+   /* The queue is empty so make the server idle and 
+   eliminate the departure (service completion) event 
+   from consideration. */
+   
+      self.server_status = Status::IDLE;
+      self.time_next_event[1] = 1.0e+30;
+   }
+   else {
+      /* The queue is nonempty, so decrement 
+      the number of customers in queue. */
+      self.num_in_q -= 1;
+      
+      /* Compute the delay of the customer who is beginning 
+      service and update the total delay accumulator. */
+      delay = self.sim_time - self.time_arrival[0];
+      self.total_of_delays += delay;
+      
+      /* Increment the number of customers delayed,
+      and schedule departure. */
+      self.num_cust_delayed +=1;
+      self.time_next_event[1] = self.sim_time + draw_exp(self.mean_service);
+
+      /* Move each customer in queue (if any) up one place. */
+      for i in 1..self.num_in_q{
+         self.time_arrival[i] = self.time_arrival[i+1];
+
+      }
+
+   }
+
+  }
+
+  pub fn report(&mut self){
+      println!("Average delay in queue {} minutes.", self.total_of_delays / self.num_cust_delayed as f64);
+      println!("Average number in queue {}.", self.area_num_in_q/self.sim_time);
+      println!("Server utilization {}.",self.area_server_status / self.sim_time );
+      println!("Time Simulation ended {} minutes.", self.sim_time);
   } 
     
 }
@@ -204,6 +246,11 @@ fn test_arrive() {
    test_sim.arrive();
 
    assert_eq!(test_sim.server_status, Status::BUSY);    
+}
+#[test]
+fn test_depart(){
+   //todo
+   assert_eq!(1,1);
 }
 
 #[test]
