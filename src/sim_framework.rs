@@ -166,7 +166,7 @@ impl Sim {
       self.time_next_event[1] = self.sim_time + draw_exp(self.mean_service);
 
       /* Move each customer in queue (if any) up one place. */
-      for i in 1..self.num_in_q{
+      for i in 0..self.num_in_q{
          self.time_arrival[i] = self.time_arrival[i+1];
 
       }
