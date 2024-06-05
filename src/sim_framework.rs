@@ -17,8 +17,8 @@ pub struct Sim {
    pub total_of_delays: f64,
    pub area_num_in_q: f64,
    pub area_server_status: f64,
-   pub time_next_event: Vec<f64>,
-   pub time_arrival: Vec<f64>,
+    time_next_event: [f64;3],
+    time_arrival: Vec<f64>,
     
 }
 
@@ -40,7 +40,7 @@ impl Sim {
             total_of_delays:0.0,
             area_num_in_q:0.0,
             area_server_status:0.0,
-            time_next_event:Vec::with_capacity(3),
+            time_next_event:[0.0;3],
             time_arrival:vec![0.0;q_limit + 1]
 
         };
@@ -49,24 +49,24 @@ impl Sim {
          from consideration. */
 
         let first_event:f64 = init.sim_time + draw_exp(init.mean_interarrival);
-        init.time_next_event.push(first_event);
-        init.time_next_event.push(1.0e+30);
+        init.time_next_event[1]= first_event;
+        init.time_next_event[2] = 1.0e+30;
     
        init
      
    }
 
    pub fn timing(&mut self) -> NextEventType{
-     // let num_events: i32 = 2;
+
       let mut min_time_next_event:f64 = 1.0e+29;
       let mut next_event_type:NextEventType = NextEventType::ENDPROGRAM;
-
-      for i in 0..self.num_events{
+      
+      //note rust for loop is not inclusive "add 1" to iterate between 1,2
+      for i in 1..self.num_events+1{
          if self.time_next_event[i] < min_time_next_event{
             min_time_next_event =  self.time_next_event[i];
-            if i  == 0 {next_event_type = NextEventType::ARRIVE;}
-            else if i  == 1 {next_event_type = NextEventType::DEPART;}
-            else {panic!("Unexpeted Behavior in sim.timing() {:?} index {}", next_event_type, i );}
+            if i  == 1 {next_event_type = NextEventType::ARRIVE;}
+            if i  == 2 {next_event_type = NextEventType::DEPART;}
          }
       }
       
@@ -74,10 +74,11 @@ impl Sim {
          /* The event list is empty, so stop the simulation. */
          println!("Simulation is complete, \
          the event list is empty at {}" , self.sim_time);
+         self.report();
          process::exit(1);
       }
       /* The event list is not empty, so advance the simulation clock. */
-      self.sim_time =min_time_next_event;
+      self.sim_time = min_time_next_event;
       next_event_type
       }
       
@@ -103,19 +104,19 @@ impl Sim {
   pub fn arrive(&mut self){
       let delay:f64;
    /* Schedule next arrival. */
-      self.time_next_event[0] = self.sim_time + draw_exp(self.mean_interarrival);
+      self.time_next_event[1] = self.sim_time + draw_exp(self.mean_interarrival);
    /* Check to see whether server is busy. */
    if self.server_status == Status::BUSY {
   
       /* Server is busy, so increment number of customers in queue. */
       self.num_in_q +=1;
-      println!("number in the que {} at {} min", self.num_in_q, self.sim_time);
 
       /* Check to see whether an overflow condition exists. */
       if self.num_in_q > self.q_limit {
 
       /* The queue has overflowed, so stop the simulation. */
-      println!("Overflow of the of the array time_arrival at {}",self.sim_time);
+      println!("WARNING -- Overflow of the of the array time_arrival at {}",self.sim_time);
+      self.report();
       process::exit(2);  
       }
       /* There is still room in the queue, so store the time of arrival of the 
@@ -133,7 +134,7 @@ impl Sim {
       self.num_cust_delayed +=1;
       self.server_status=Status::BUSY;
       /* Schedule a departure (service completion). */
-      self.time_next_event[1] = self.sim_time + draw_exp(self.mean_service)
+      self.time_next_event[2] = self.sim_time + draw_exp(self.mean_service)
 
    }
   }
@@ -148,7 +149,7 @@ impl Sim {
    from consideration. */
    
       self.server_status = Status::IDLE;
-      self.time_next_event[1] = 1.0e+30;
+      self.time_next_event[2] = 1.0e+30;
    }
    else {
       /* The queue is nonempty, so decrement 
@@ -157,18 +158,17 @@ impl Sim {
       
       /* Compute the delay of the customer who is beginning 
       service and update the total delay accumulator. */
-      delay = self.sim_time - self.time_arrival[0];
+      delay = self.sim_time - self.time_arrival[1];
       self.total_of_delays += delay;
       
       /* Increment the number of customers delayed,
       and schedule departure. */
       self.num_cust_delayed +=1;
-      self.time_next_event[1] = self.sim_time + draw_exp(self.mean_service);
+      self.time_next_event[2] = self.sim_time + draw_exp(self.mean_service);
 
       /* Move each customer in queue (if any) up one place. */
-      for i in 0..self.num_in_q{
+      for i in 1..self.num_in_q+1{
          self.time_arrival[i] = self.time_arrival[i+1];
-
       }
 
    }
@@ -179,16 +179,28 @@ impl Sim {
       println!("Average delay in queue {} minutes.", self.total_of_delays / self.num_cust_delayed as f64);
       println!("Average number in queue {}.", self.area_num_in_q/self.sim_time);
       println!("Server utilization {}.",self.area_server_status / self.sim_time );
-      println!("Time Simulation ended {} minutes.", self.sim_time);
+      println!("Time Simulation ended {} minutes.\n", self.sim_time);
   } 
+
+  pub fn print_inputs(&mut self){
+   /* Write report heading and input parameters. */
+   println!("Single-server queueing system");
+   println!("Mean interarrival time: {0} minutes", self.mean_interarrival);
+   println!("Mean service time: {0}", self.mean_service);
+  // println!("Number of customers {0}", self.num_delays_required);
+   println!("The Que Limit is set to {0}\n", self.q_limit);
+  }
     
 }
 
 pub fn draw_exp(lamda_time:f64) ->f64{
-let exp = Exp::new(lamda_time).unwrap();
+let lambda = 1.0/lamda_time;
+let exp = Exp::new(lambda).unwrap();
 let random_exp:f64 = exp.sample(&mut rand::thread_rng());
 random_exp
 }
+
+
 
 #[derive(Debug)]
 #[derive(PartialEq)]
@@ -228,7 +240,8 @@ mod tests {
 
       assert_eq!(test_sim.timing(), NextEventType::ARRIVE);
       
-      test_sim.time_next_event[1] = 0.0033;
+      test_sim.time_next_event[2] = 0.0033;
+      assert!(test_sim.time_next_event[1] > test_sim.time_next_event[2]);
       assert_eq!(test_sim.timing(), NextEventType::DEPART);
       // This test will not work as expected due to exit code.
       // test_sim.time_next_event[0] = 1.0e+30;
@@ -266,7 +279,7 @@ fn test_exp_draw(){
    for _ in 0..large_number{draw.push(draw_exp(2.33));}
    let draw_sum: f64 = draw.iter().sum();
    let draw_mean: f64 = 100.0 * draw_sum / large_number as f64;
-   let truth_mean:f64 = 100.0 * 1.0 / 2.33;
+   let truth_mean:f64 = 100.0 * 2.33;
    assert_eq!(draw_mean.round(), truth_mean.round())
 }
 
