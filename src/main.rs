@@ -1,28 +1,25 @@
 
 pub mod sim_framework;
+pub mod input_out_manager;
 use crate::sim_framework::{Sim, NextEventType};
+use crate::input_out_manager::read_input_file;
 use std::process;
-
 
 
 fn main() {
     
-/* Specify the number of events for the timing function. */
+/*Read data from input file csv. */
+   let file_inputs = read_input_file().unwrap();
+   let first_run = &file_inputs[0];
 
-
-/* Read input parameters. */
-   let mean_interarrival: f64= 1.00;
-   let mean_service:f64 = 0.5000;
-   let num_delays_required:i32 = 1000;
-   let q_limit:usize = 200;
-
-   let mut simulation: Sim = Sim::initialize(mean_interarrival,mean_service,q_limit);
+/* initialize from csv ead input parameters. */
+   let mut simulation: Sim = Sim::initialize_from_record(first_run);
    
     simulation.print_inputs();
 
    /* Run the simulation while more delays are still needed. */
 
-    while simulation.num_cust_delayed < num_delays_required { 
+    while simulation.num_cust_delayed < simulation.num_delays_required { 
 
      // println!("number in the que {} at {} min -- {} Num Cust Delayed", simulation.num_in_q, simulation.sim_time, simulation.num_cust_delayed);
       
