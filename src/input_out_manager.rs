@@ -30,7 +30,6 @@ pub struct OutputRecord{
     pub time_simulation_ended:f64
 }
 
-
 pub fn read_input_file()-> Result<Vec<Record>, Box<dyn Error>> {
     let file_path = get_first_arg()?;
     let file = File::open(file_path)?;
@@ -68,7 +67,6 @@ pub fn write_output_file(record:OutputRecord) -> Result<(), Box<dyn Error>> {
 
     Ok(())
 }
-
 
 
 #[test]

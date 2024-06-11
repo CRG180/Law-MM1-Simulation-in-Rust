@@ -218,6 +218,35 @@ impl Sim {
    println!("Number of customers required: {0}", self.num_delays_required);
    println!("The Que Limit is set to {0}\n", self.q_limit);
   }
+
+ pub fn run_simulation(&mut self){
+      /* Run the simulation while more delays are still needed. */
+
+      while self.num_cust_delayed < self.num_delays_required { 
+
+         // println!("number in the que {} at {} min -- {} Num Cust Delayed", simulation.num_in_q, simulation.sim_time, simulation.num_cust_delayed);
+          
+          /* Determine the next event. */
+         let next_event_type: NextEventType = self.timing();
+          
+          self.update_time_avg_stats();
+    
+          match next_event_type {
+    
+             NextEventType::ARRIVE => {
+               self.arrive();
+             }
+             NextEventType::DEPART => {
+                self.depart();
+             }
+             NextEventType::ENDPROGRAM =>{
+                process::exit(1);
+             }
+              
+          }
+    
+        }
+  }
     
 }
 
