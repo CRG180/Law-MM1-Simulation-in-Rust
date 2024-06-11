@@ -2,7 +2,7 @@
 pub mod sim_framework;
 pub mod input_out_manager;
 use crate::sim_framework::{Sim, NextEventType};
-use crate::input_out_manager::read_input_file;
+use crate::input_out_manager::{read_input_file,write_output_file};
 use std::process;
 
 
@@ -44,6 +44,8 @@ fn main() {
 
     }
     /* Invoke the report generator and end the simulation. */
-    simulation.report();
+    let output = simulation.report();
+
+    let _ = write_output_file(output);
 
 }

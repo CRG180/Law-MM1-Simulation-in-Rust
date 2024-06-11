@@ -1,12 +1,13 @@
 use rand_distr::{Exp, Distribution};
 use rand::{self};
 use std::process;
-
-use crate::input_out_manager::Record;
+use crate::input_out_manager::{Record, OutputRecord};
 
 
 #[derive(Debug)]
 pub struct Sim {
+   pub design_point:Option<usize>,
+   pub run_number:Option<usize>,
    pub mean_interarrival:f64,
    pub mean_service:f64,
    pub num_delays_required: i32,
@@ -21,7 +22,7 @@ pub struct Sim {
       area_num_in_q: f64,
       area_server_status: f64,
       time_next_event: [f64;3],
-      time_arrival: Vec<f64>,
+      time_arrival: Vec<f64>
     
 }
 
@@ -31,6 +32,8 @@ impl Sim {
                      q_limit:usize, num_delays_required:i32)->Sim {
 
        let mut init = Sim {
+            design_point:None,
+            run_number:None,
             mean_interarrival,
             mean_service,
             num_delays_required,
@@ -59,10 +62,15 @@ impl Sim {
      
    }
 
-   pub fn initialize_from_record(record:&Record)->Sim{
+   pub fn initialize_from_record(record:&Record)->Sim{  
 
-         Sim::initialize(record.mean_interarrival, record.mean_service,
-             record.q_limit,record.num_delays_required)
+        let mut init = Sim::initialize(record.mean_interarrival, record.mean_service,
+             record.q_limit,record.num_delays_required);
+            init.design_point = Some(record.design_point);
+            init.run_number = Some(record.design_point);
+
+            init
+
    }
 
    pub fn timing(&mut self) -> NextEventType{
@@ -182,11 +190,24 @@ impl Sim {
 
   }
 
-  pub fn report(&self){
+  pub fn report(&self)->OutputRecord{
+      
       println!("Average delay in queue {} minutes.", self.total_of_delays / self.num_cust_delayed as f64);
       println!("Average number in queue {}.", self.area_num_in_q/self.sim_time);
       println!("Server utilization {}.",self.area_server_status / self.sim_time );
       println!("Time Simulation ended {} minutes.\n", self.sim_time);
+
+   OutputRecord{
+      design_point:self.design_point.unwrap(),
+      run: self.run_number.unwrap(),
+      mean_interarrival: self.mean_interarrival,
+      num_delays_required:self.num_delays_required,
+      q_limit:self.q_limit,
+      mean_service:self.mean_service,
+      average_delay:self.total_of_delays / self.num_cust_delayed as f64,
+      average_number_in_queue:self.area_num_in_q/self.sim_time,
+      server_utilization:self.area_server_status / self.sim_time,
+      time_simulation_ended:self.sim_time}
   } 
 
   pub fn print_inputs(&self){
