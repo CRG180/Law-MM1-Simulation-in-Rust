@@ -192,10 +192,10 @@ impl Sim {
 
   pub fn report(&self)->OutputRecord{
       
-      println!("Average delay in queue {} minutes.", self.total_of_delays / self.num_cust_delayed as f64);
-      println!("Average number in queue {}.", self.area_num_in_q/self.sim_time);
-      println!("Server utilization {}.",self.area_server_status / self.sim_time );
-      println!("Time Simulation ended {} minutes.\n", self.sim_time);
+  //    println!("Average delay in queue {} minutes.", self.total_of_delays / self.num_cust_delayed as f64);
+  //    println!("Average number in queue {}.", self.area_num_in_q/self.sim_time);
+  //    println!("Server utilization {}.",self.area_server_status / self.sim_time );
+  //    println!("Time Simulation ended {} minutes.\n", self.sim_time);
 
    OutputRecord{
       design_point:self.design_point.unwrap(),

@@ -30,6 +30,18 @@ pub struct OutputRecord{
     pub time_simulation_ended:f64
 }
 
+pub struct OutputRecordContainer{
+    pub records:Vec<OutputRecord>
+}
+ impl OutputRecordContainer {
+    pub fn new()->Self {
+        Self{
+            records:vec![]
+        }
+    }
+     
+ }
+
 pub fn read_input_file()-> Result<Vec<Record>, Box<dyn Error>> {
     let file_path = get_first_arg()?;
     let file = File::open(file_path)?;
@@ -60,14 +72,14 @@ fn get_first_arg() -> Result<OsString, Box<dyn Error>> {
     }
 }
 
-pub fn write_output_file(record:OutputRecord) -> Result<(), Box<dyn Error>> {
+pub fn write_output_file(sim_out_puts:OutputRecordContainer) -> Result<(), Box<dyn Error>> {
     let mut wtr = csv::Writer::from_writer(stdout());
-    wtr.serialize(record)?;
+    for record in sim_out_puts.records{
+    wtr.serialize(record)?;}
     wtr.flush()?;
 
     Ok(())
 }
-
 
 #[test]
 fn test_read_input_file(){
