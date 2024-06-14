@@ -1,6 +1,5 @@
-use std::io::stdout;
+
 use std::{
-    env,
     error::Error,
     ffi::OsString,
     fs::File,
@@ -31,19 +30,21 @@ pub struct OutputRecord{
 }
 
 pub struct OutputRecordContainer{
-    pub records:Vec<OutputRecord>
+    pub records:Vec<OutputRecord>,
+    pub output_path: OsString
 }
  impl OutputRecordContainer {
-    pub fn new()->Self {
+    pub fn new(output_path:OsString)->Self {
         Self{
-            records:vec![]
+            records:vec![],
+            output_path
         }
     }
      
  }
 
-pub fn read_input_file()-> Result<Vec<Record>, Box<dyn Error>> {
-    let file_path = get_first_arg()?;
+pub fn read_input_file(input_path:OsString)-> Result<Vec<Record>, Box<dyn Error>> {
+    let file_path = input_path;
     let file = File::open(file_path)?;
     let mut records:Vec<Record>=vec![];
     let mut rdr = csv::Reader::from_reader(file);
@@ -65,15 +66,9 @@ pub fn read_input_file()-> Result<Vec<Record>, Box<dyn Error>> {
 }
 
 
-fn get_first_arg() -> Result<OsString, Box<dyn Error>> {
-    match env::args_os().nth(1) {
-        None => Err(From::from("expected 1 argument, but got none")),
-        Some(file_path) => Ok(file_path),
-    }
-}
-
 pub fn write_output_file(sim_out_puts:OutputRecordContainer) -> Result<(), Box<dyn Error>> {
-    let mut wtr = csv::Writer::from_writer(stdout());
+    //let mut wtr = csv::Writer::from_writer(stdout());
+    let mut wtr = csv::Writer::from_path(sim_out_puts.output_path)?;
     for record in sim_out_puts.records{
     wtr.serialize(record)?;}
     wtr.flush()?;
@@ -83,7 +78,8 @@ pub fn write_output_file(sim_out_puts:OutputRecordContainer) -> Result<(), Box<d
 
 #[test]
 fn test_read_input_file(){
-    if let Err(err) = read_input_file() {
+    let os_path = OsString::from("data/test.csv");
+    if let Err(err) = read_input_file(os_path) {
         println!("error running example: {}", err);
     }
 }
