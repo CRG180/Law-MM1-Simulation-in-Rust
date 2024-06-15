@@ -67,7 +67,7 @@ impl Sim {
         let mut init = Sim::initialize(record.mean_interarrival, record.mean_service,
              record.q_limit,record.num_delays_required);
             init.design_point = Some(record.design_point);
-            init.run_number = Some(record.design_point);
+            init.run_number = Some(record.run_number);
 
             init
 

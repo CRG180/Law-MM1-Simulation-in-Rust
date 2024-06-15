@@ -43,23 +43,27 @@ pub struct OutputRecordContainer{
      
  }
 
-pub fn read_input_file(input_path:OsString)-> Result<Vec<Record>, Box<dyn Error>> {
+pub fn read_input_file(input_path:OsString, runs_per_design_point:usize)-> Result<Vec<Record>, Box<dyn Error>> {
     let file_path = input_path;
     let file = File::open(file_path)?;
     let mut records:Vec<Record>=vec![];
     let mut rdr = csv::Reader::from_reader(file);
+    let run_number = runs_per_design_point;
+    
+
     for result in rdr.records() {
         let record: csv::StringRecord = result?;
-        
+        for counter  in 1..run_number+1 {
         let line: Record = Record{
                 mean_interarrival:record[0].parse()?,
                 mean_service:record[1].parse()?,
                 num_delays_required:record[2].parse()?,
                 q_limit:record[3].parse()?,
                 design_point:record[4].parse()?,
-                run_number:record[5].parse()?};
+                run_number:counter};
         records.push(line);
-        
+
+        }   
     }
 
     Ok(records)
@@ -79,7 +83,7 @@ pub fn write_output_file(sim_out_puts:OutputRecordContainer) -> Result<(), Box<d
 #[test]
 fn test_read_input_file(){
     let os_path = OsString::from("data/test.csv");
-    if let Err(err) = read_input_file(os_path) {
+    if let Err(err) = read_input_file(os_path,5) {
         println!("error running example: {}", err);
     }
 }

@@ -5,7 +5,7 @@ This project aims to rewrite Law's M/M/1 simulation model, originally written in
 
 The purpose of this project is to practice Rust and review concepts from my graduate education.
 
-To run the program after cloning the repository, you can just enter the path to the test input file and provide an optional path for the output CSV. 
+To run the program after cloning the repository, you can just enter the path to the test input file, provide an optional path for the output CSV, and optional argument for the number replication runs for each of design points (rows in the csv files).  
 ```
-cargo run data/test.csv -o mm1_out_putfile.csv
+cargo run data/test.csv -o mm1_out_putfile.csv -r 1
 ```

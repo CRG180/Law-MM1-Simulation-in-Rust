@@ -12,7 +12,9 @@ use std::ffi::OsString;
 struct Args {
     input_csv_path: OsString,
     #[arg(short, long, default_value = "mm1_output_data.csv")]
-    out_csv_path:OsString
+    out_csv_path:OsString,
+    #[arg(short, long, default_value = "1")]
+    runs_per_design_point: usize
 }
 
 fn main() {
@@ -20,7 +22,8 @@ fn main() {
   
     
 /*Read data from input file csv. */
-   let file_inputs = read_input_file(args.input_csv_path).unwrap();
+   let file_inputs = read_input_file(args.input_csv_path,
+  args.runs_per_design_point).unwrap();
    let mut sim_outputs = OutputRecordContainer::new(args.out_csv_path);
 
   for i in file_inputs{
